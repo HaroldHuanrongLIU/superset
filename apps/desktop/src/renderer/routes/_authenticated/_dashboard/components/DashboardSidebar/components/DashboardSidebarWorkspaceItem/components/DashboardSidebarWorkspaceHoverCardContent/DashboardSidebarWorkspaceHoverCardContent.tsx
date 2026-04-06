@@ -5,7 +5,6 @@ import { FaGithub } from "react-icons/fa";
 import { LuExternalLink, LuGlobe, LuTriangleAlert } from "react-icons/lu";
 import { useHotkeyDisplay } from "renderer/hotkeys";
 import type { DashboardSidebarWorkspace } from "../../../../types";
-import type { WorkspaceRowMockData } from "../../utils";
 import { ChecksList } from "./components/ChecksList";
 import { ChecksSummary } from "./components/ChecksSummary";
 import { PullRequestStatusBadge } from "./components/PullRequestStatusBadge";
@@ -13,12 +12,10 @@ import { ReviewStatus } from "./components/ReviewStatus";
 
 interface DashboardSidebarWorkspaceHoverCardContentProps {
 	workspace: DashboardSidebarWorkspace;
-	mockData: WorkspaceRowMockData;
 }
 
 export function DashboardSidebarWorkspaceHoverCardContent({
 	workspace,
-	mockData,
 }: DashboardSidebarWorkspaceHoverCardContentProps) {
 	const {
 		name,
@@ -107,14 +104,16 @@ export function DashboardSidebarWorkspaceHoverCardContent({
 								/>
 							)}
 						</div>
-						<div className="flex items-center gap-1.5 text-xs font-mono shrink-0">
-							<span className="text-emerald-500">
-								+{mockData.diffStats.additions}
-							</span>
-							<span className="text-destructive-foreground">
-								-{mockData.diffStats.deletions}
-							</span>
-						</div>
+						{workspace.diffStats && (
+							<div className="flex items-center gap-1.5 text-xs font-mono shrink-0">
+								<span className="text-emerald-500">
+									+{workspace.diffStats.additions}
+								</span>
+								<span className="text-destructive-foreground">
+									-{workspace.diffStats.deletions}
+								</span>
+							</div>
+						)}
 					</div>
 
 					<p className="text-xs leading-relaxed line-clamp-2">

@@ -94,7 +94,6 @@ export function DashboardSidebarWorkspaceItem({
 						hoverCardContent={
 							<DashboardSidebarWorkspaceHoverCardContent
 								workspace={workspace}
-								mockData={mockData}
 							/>
 						}
 						onCreateSection={handleCreateSection}
@@ -153,10 +152,7 @@ export function DashboardSidebarWorkspaceItem({
 						hostType === "local-device" ? onHoverCardOpen : undefined
 					}
 					hoverCardContent={
-						<DashboardSidebarWorkspaceHoverCardContent
-							workspace={workspace}
-							mockData={mockData}
-						/>
+						<DashboardSidebarWorkspaceHoverCardContent workspace={workspace} />
 					}
 					onCreateSection={handleCreateSection}
 					onMoveToSection={(targetSectionId) =>

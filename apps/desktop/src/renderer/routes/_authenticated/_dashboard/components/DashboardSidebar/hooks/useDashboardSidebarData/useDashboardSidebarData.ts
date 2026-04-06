@@ -16,6 +16,7 @@ import type {
 	DashboardSidebarSection,
 	DashboardSidebarWorkspace,
 } from "../../types";
+import { useDashboardDiffStats } from "../useDashboardDiffStats";
 
 // Pending workspaces are always rendered at the end of the project's workspace list
 const PENDING_WORKSPACE_TAB_ORDER = Number.MAX_SAFE_INTEGER;
@@ -136,6 +137,12 @@ export function useDashboardSidebarData() {
 		[deviceInfo?.deviceId, sidebarWorkspaces],
 	);
 
+	const diffStatsByWorkspaceId = useDashboardDiffStats(
+		localWorkspaceIds,
+		activeHostService?.url ?? null,
+		activeHostService?.client ?? null,
+	);
+
 	const { data: pullRequestData, refetch: refetchPullRequests } = useQuery({
 		queryKey: [
 			"dashboard-sidebar",
@@ -245,6 +252,10 @@ export function useDashboardSidebarData() {
 						: null,
 				branchExistsOnRemote:
 					project.githubOwner !== null && project.githubRepoName !== null,
+				diffStats:
+					hostType === "local-device"
+						? (diffStatsByWorkspaceId.get(workspace.id) ?? null)
+						: null,
 				previewUrl: null,
 				needsRebase: null,
 				behindCount: null,
@@ -295,6 +306,7 @@ export function useDashboardSidebarData() {
 							? `https://github.com/${project.githubOwner}/${project.githubRepoName}`
 							: null,
 					branchExistsOnRemote: false,
+					diffStats: null,
 					previewUrl: null,
 					needsRebase: null,
 					behindCount: null,
@@ -328,6 +340,7 @@ export function useDashboardSidebarData() {
 		});
 	}, [
 		deviceInfo?.deviceId,
+		diffStatsByWorkspaceId,
 		localPullRequestsByWorkspaceId,
 		pendingWorkspace,
 		sidebarProjects,

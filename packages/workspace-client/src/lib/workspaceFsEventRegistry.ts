@@ -1,33 +1,30 @@
 import type { FsWatchEvent } from "@superset/workspace-fs/host";
-import type {
-	WorkspaceClientContextValue,
-	WorkspaceFsSubscriptionInput,
-} from "../providers/WorkspaceClientProvider";
+import { getEventBus } from "./eventBus";
 
 export type WorkspaceFsEventListener = (event: FsWatchEvent) => void;
 
 interface WorkspaceFsSubscriptionState {
 	bridgeCount: number;
-	client: WorkspaceClientContextValue;
+	hostUrl: string;
+	getWsToken: () => string | null;
 	listeners: Set<WorkspaceFsEventListener>;
-	unsubscribeTransport: (() => void) | null;
 	workspaceId: string;
+	removeBusListener: (() => void) | null;
+	watching: boolean;
 }
 
 const subscriptions = new Map<string, WorkspaceFsSubscriptionState>();
 
-function getSubscriptionKey(
-	client: WorkspaceClientContextValue,
-	workspaceId: string,
-): string {
-	return `${client.hostUrl}:${workspaceId}`;
+function getSubscriptionKey(hostUrl: string, workspaceId: string): string {
+	return `${hostUrl}:${workspaceId}`;
 }
 
 function getOrCreateSubscription(
-	client: WorkspaceClientContextValue,
+	hostUrl: string,
+	getWsToken: () => string | null,
 	workspaceId: string,
 ): WorkspaceFsSubscriptionState {
-	const key = getSubscriptionKey(client, workspaceId);
+	const key = getSubscriptionKey(hostUrl, workspaceId);
 	const existing = subscriptions.get(key);
 	if (existing) {
 		return existing;
@@ -35,10 +32,12 @@ function getOrCreateSubscription(
 
 	const nextState: WorkspaceFsSubscriptionState = {
 		bridgeCount: 0,
-		client,
+		hostUrl,
+		getWsToken,
 		listeners: new Set<WorkspaceFsEventListener>(),
-		unsubscribeTransport: null,
 		workspaceId,
+		removeBusListener: null,
+		watching: false,
 	};
 	subscriptions.set(key, nextState);
 	return nextState;
@@ -51,13 +50,22 @@ function removeSubscriptionIfInactive(
 		return;
 	}
 
-	state.unsubscribeTransport?.();
-	state.unsubscribeTransport = null;
-	subscriptions.delete(getSubscriptionKey(state.client, state.workspaceId));
+	// Stop watching fs for this workspace
+	if (state.watching) {
+		const bus = getEventBus(state.hostUrl, state.getWsToken);
+		bus.unwatchFs(state.workspaceId);
+		state.watching = false;
+	}
+
+	// Remove bus listener
+	state.removeBusListener?.();
+	state.removeBusListener = null;
+
+	subscriptions.delete(getSubscriptionKey(state.hostUrl, state.workspaceId));
 }
 
 function ensureTransport(state: WorkspaceFsSubscriptionState): void {
-	if (state.unsubscribeTransport) {
+	if (state.removeBusListener) {
 		return;
 	}
 
@@ -65,30 +73,40 @@ function ensureTransport(state: WorkspaceFsSubscriptionState): void {
 		return;
 	}
 
-	const input: WorkspaceFsSubscriptionInput = {
-		workspaceId: state.workspaceId,
-		onEvent: (event) => {
-			for (const listener of state.listeners) {
-				listener(event);
+	const bus = getEventBus(state.hostUrl, state.getWsToken);
+
+	// Listen for fs events on the event bus for this workspace
+	state.removeBusListener = bus.on(
+		"fs:events",
+		state.workspaceId,
+		(_workspaceId, payload) => {
+			for (const event of payload.events) {
+				for (const listener of state.listeners) {
+					listener(event);
+				}
 			}
 		},
-		onError: (error) => {
-			console.error("[workspace-client/fs-events] Stream failed:", {
-				hostUrl: state.client.hostUrl,
-				workspaceId: state.workspaceId,
-				error,
-			});
-		},
-	};
+	);
 
-	state.unsubscribeTransport = state.client.subscribeToWorkspaceFsEvents(input);
+	// Tell the server to start watching this workspace's filesystem
+	bus.watchFs(state.workspaceId);
+	state.watching = true;
+}
+
+export interface FsEventRegistryClient {
+	hostUrl: string;
+	getWsToken: () => string | null;
 }
 
 export function retainWorkspaceFsBridge(
-	client: WorkspaceClientContextValue,
+	client: FsEventRegistryClient,
 	workspaceId: string,
 ): () => void {
-	const state = getOrCreateSubscription(client, workspaceId);
+	const state = getOrCreateSubscription(
+		client.hostUrl,
+		client.getWsToken,
+		workspaceId,
+	);
 	state.bridgeCount += 1;
 	ensureTransport(state);
 
@@ -99,11 +117,15 @@ export function retainWorkspaceFsBridge(
 }
 
 export function subscribeToWorkspaceFsEvents(
-	client: WorkspaceClientContextValue,
+	client: FsEventRegistryClient,
 	workspaceId: string,
 	listener: WorkspaceFsEventListener,
 ): () => void {
-	const state = getOrCreateSubscription(client, workspaceId);
+	const state = getOrCreateSubscription(
+		client.hostUrl,
+		client.getWsToken,
+		workspaceId,
+	);
 	state.listeners.add(listener);
 	ensureTransport(state);
 

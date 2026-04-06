@@ -1,3 +1,4 @@
+export { useEventBus } from "./hooks/useEventBus";
 export {
 	type UseFileDocumentParams,
 	type UseFileDocumentResult,
@@ -9,14 +10,15 @@ export {
 	type UseFileTreeResult,
 	useFileTree,
 } from "./hooks/useFileTree";
+export { useGitChangeEvents } from "./hooks/useGitChangeEvents";
 export { useWorkspaceFsEventBridge } from "./hooks/useWorkspaceFsEventBridge";
 export { useWorkspaceFsEvents } from "./hooks/useWorkspaceFsEvents";
+export { type EventBusHandle, getEventBus } from "./lib/eventBus";
 export {
 	useWorkspaceClient,
 	useWorkspaceHostUrl,
 	useWorkspaceWsUrl,
 	type WorkspaceClientContextValue,
 	WorkspaceClientProvider,
-	type WorkspaceFsSubscriptionInput,
 } from "./providers/WorkspaceClientProvider";
 export { workspaceTrpc } from "./workspace-trpc";

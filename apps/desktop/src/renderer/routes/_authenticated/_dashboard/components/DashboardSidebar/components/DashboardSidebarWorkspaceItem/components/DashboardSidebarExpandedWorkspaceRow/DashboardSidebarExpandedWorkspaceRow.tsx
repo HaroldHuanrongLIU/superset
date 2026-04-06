@@ -154,11 +154,13 @@ export const DashboardSidebarExpandedWorkspaceRow = forwardRef<
 									</span>
 								) : (
 									<>
-										<DashboardSidebarWorkspaceDiffStats
-											additions={mockData.diffStats.additions}
-											deletions={mockData.diffStats.deletions}
-											isActive={isActive}
-										/>
+										{workspace.diffStats && (
+											<DashboardSidebarWorkspaceDiffStats
+												additions={workspace.diffStats.additions}
+												deletions={workspace.diffStats.deletions}
+												isActive={isActive}
+											/>
+										)}
 										<div className="invisible flex items-center justify-end gap-1.5 opacity-0 transition-[opacity,visibility] group-hover:visible group-hover:opacity-100">
 											{shortcutLabel && (
 												<span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
@@ -236,11 +238,13 @@ export const DashboardSidebarExpandedWorkspaceRow = forwardRef<
 									</span>
 								) : (
 									<>
-										<DashboardSidebarWorkspaceDiffStats
-											additions={mockData.diffStats.additions}
-											deletions={mockData.diffStats.deletions}
-											isActive={isActive}
-										/>
+										{workspace.diffStats && (
+											<DashboardSidebarWorkspaceDiffStats
+												additions={workspace.diffStats.additions}
+												deletions={workspace.diffStats.deletions}
+												isActive={isActive}
+											/>
+										)}
 										<div className="invisible flex items-center justify-end gap-1.5 opacity-0 transition-[opacity,visibility] group-hover:visible group-hover:opacity-100">
 											{shortcutLabel && (
 												<span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">

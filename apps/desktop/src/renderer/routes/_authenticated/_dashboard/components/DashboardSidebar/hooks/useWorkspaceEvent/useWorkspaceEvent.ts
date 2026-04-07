@@ -1,4 +1,6 @@
 import { getEventBus } from "@superset/workspace-client";
+// biome-ignore lint/style/noRestrictedImports: type-only import, no Node runtime dependency
+import type { FsWatchEvent } from "@superset/workspace-fs/host";
 import { eq } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
 import { useEffect, useEffectEvent, useMemo } from "react";
@@ -16,6 +18,18 @@ export function useWorkspaceEvent(
 	type: "git:changed",
 	workspaceId: string,
 	callback: () => void,
+	enabled?: boolean,
+): void;
+export function useWorkspaceEvent(
+	type: "fs:events",
+	workspaceId: string,
+	callback: (event: FsWatchEvent) => void,
+	enabled?: boolean,
+): void;
+export function useWorkspaceEvent(
+	type: "git:changed" | "fs:events",
+	workspaceId: string,
+	callback: ((event: FsWatchEvent) => void) | (() => void),
 	enabled = true,
 ): void {
 	const hostUrl = useWorkspaceHostUrl(workspaceId);
@@ -25,12 +39,33 @@ export function useWorkspaceEvent(
 		if (!enabled || !hostUrl) return;
 
 		const bus = getEventBus(hostUrl, () => getHostServiceWsToken(hostUrl));
-		const removeListener = bus.on(type, workspaceId, () => handler());
-		const release = bus.retain();
+		const cleanups: Array<() => void> = [];
+
+		if (type === "fs:events") {
+			bus.watchFs(workspaceId);
+			const removeListener = bus.on(
+				"fs:events",
+				workspaceId,
+				(_wid, payload) => {
+					for (const event of payload.events) {
+						(handler as (event: FsWatchEvent) => void)(event);
+					}
+				},
+			);
+			cleanups.push(removeListener, () => bus.unwatchFs(workspaceId));
+		} else {
+			const removeListener = bus.on("git:changed", workspaceId, () => {
+				(handler as () => void)();
+			});
+			cleanups.push(removeListener);
+		}
+
+		cleanups.push(bus.retain());
 
 		return () => {
-			removeListener();
-			release();
+			for (const cleanup of cleanups) {
+				cleanup();
+			}
 		};
 	}, [enabled, hostUrl, type, workspaceId]);
 }

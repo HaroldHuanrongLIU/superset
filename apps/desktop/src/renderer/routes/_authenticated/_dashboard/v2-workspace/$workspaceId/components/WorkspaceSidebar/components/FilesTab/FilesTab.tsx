@@ -2,19 +2,15 @@ import { alert } from "@superset/ui/atoms/Alert";
 import { Button } from "@superset/ui/button";
 import { toast } from "@superset/ui/sonner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@superset/ui/tooltip";
-import {
-	type FileTreeNode,
-	useFileTree,
-	useWorkspaceFsEventBridge,
-	useWorkspaceFsEvents,
-	workspaceTrpc,
-} from "@superset/workspace-client";
+import { workspaceTrpc } from "@superset/workspace-client";
 import { FilePlus, FolderPlus, FoldVertical, RefreshCw } from "lucide-react";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { useWorkspaceEvent } from "renderer/routes/_authenticated/_dashboard/components/DashboardSidebar/hooks/useWorkspaceEvent";
 import {
 	ROW_HEIGHT,
 	TREE_INDENT,
 } from "renderer/screens/main/components/WorkspaceView/RightSidebar/FilesView/constants";
+import { type FileTreeNode, useFileTree } from "../../../../hooks/useFileTree";
 import { NewItemInput } from "./components/NewItemInput";
 import { WorkspaceFilesTreeItem } from "./components/WorkspaceFilesTreeItem";
 
@@ -173,14 +169,10 @@ export function FilesTab({
 		workspaceTrpc.filesystem.createDirectory.useMutation();
 	const movePath = workspaceTrpc.filesystem.movePath.useMutation();
 
-	useWorkspaceFsEventBridge(
-		workspaceId,
-		Boolean(workspaceId && workspaceQuery.data?.worktreePath),
-	);
-
 	const fileTree = useFileTree({ workspaceId, rootPath });
 
-	useWorkspaceFsEvents(
+	useWorkspaceEvent(
+		"fs:events",
 		workspaceId,
 		() => void utils.filesystem.searchFiles.invalidate(),
 		Boolean(workspaceId),

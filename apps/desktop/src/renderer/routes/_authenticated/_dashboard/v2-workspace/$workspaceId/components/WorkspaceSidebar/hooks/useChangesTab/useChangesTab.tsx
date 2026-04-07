@@ -4,6 +4,7 @@ import { workspaceTrpc } from "@superset/workspace-client";
 import type { inferRouterOutputs } from "@trpc/server";
 import { GitBranch, Pencil } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useWorkspaceEvent } from "renderer/routes/_authenticated/_dashboard/components/DashboardSidebar/hooks/useWorkspaceEvent";
 import { useCollections } from "renderer/routes/_authenticated/providers/CollectionsProvider";
 import type { ChangesFilter } from "renderer/routes/_authenticated/providers/CollectionsProvider/dashboardSidebarLocal/schema";
 import type { SidebarTabDefinition } from "../../types";
@@ -214,20 +215,27 @@ export function useChangesTab({
 		[collections, workspaceId],
 	);
 
+	const statusUtils = workspaceTrpc.useUtils();
+
 	const status = workspaceTrpc.git.getStatus.useQuery(
 		{ workspaceId, baseBranch: baseBranch ?? undefined },
-		{ refetchInterval: 3_000, refetchOnWindowFocus: true },
+		{ refetchOnWindowFocus: true },
 	);
 
 	const commits = workspaceTrpc.git.listCommits.useQuery(
 		{ workspaceId, baseBranch: baseBranch ?? undefined },
-		{ refetchInterval: 3_000, refetchOnWindowFocus: true },
+		{ refetchOnWindowFocus: true },
 	);
 
 	const branches = workspaceTrpc.git.listBranches.useQuery(
 		{ workspaceId },
 		{ refetchInterval: 30_000, refetchOnWindowFocus: true },
 	);
+
+	useWorkspaceEvent("git:changed", workspaceId, () => {
+		void statusUtils.git.getStatus.invalidate({ workspaceId });
+		void statusUtils.git.listCommits.invalidate({ workspaceId });
+	});
 
 	const renameBranchMutation = workspaceTrpc.git.renameBranch.useMutation();
 

@@ -1,8 +1,8 @@
 import type { RendererContext } from "@superset/panes";
-import { useFileDocument } from "@superset/workspace-client";
 import { useCallback } from "react";
 import { isImageFile, isMarkdownFile } from "shared/file-types";
 import type { FilePaneData, PaneViewerData } from "../../../../types";
+import { useFileDocument } from "../../../useFileDocument";
 import { CodeRenderer } from "./renderers/CodeRenderer";
 import { ImageRenderer } from "./renderers/ImageRenderer";
 import { MarkdownRenderer } from "./renderers/MarkdownRenderer";

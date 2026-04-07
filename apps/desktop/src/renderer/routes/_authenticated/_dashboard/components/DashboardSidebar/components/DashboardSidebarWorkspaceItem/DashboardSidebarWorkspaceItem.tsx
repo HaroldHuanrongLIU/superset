@@ -1,3 +1,4 @@
+import { useDiffStats } from "../../hooks/useDashboardDiffStats";
 import type { DashboardSidebarWorkspace } from "../../types";
 import { DashboardSidebarDeleteDialog } from "../DashboardSidebarDeleteDialog";
 import { DashboardSidebarCollapsedWorkspaceButton } from "./components/DashboardSidebarCollapsedWorkspaceButton";
@@ -32,6 +33,7 @@ export function DashboardSidebarWorkspaceItem({
 		creationStatus,
 	} = workspace;
 	const mockData = getWorkspaceRowMocks(id);
+	const diffStats = useDiffStats(id);
 	const {
 		cancelRename,
 		handleClick,
@@ -97,6 +99,7 @@ export function DashboardSidebarWorkspaceItem({
 						hoverCardContent={
 							<DashboardSidebarWorkspaceHoverCardContent
 								workspace={workspace}
+								diffStats={diffStats}
 							/>
 						}
 						onCreateSection={handleCreateSection}
@@ -135,6 +138,7 @@ export function DashboardSidebarWorkspaceItem({
 			renameValue={renameValue}
 			shortcutLabel={shortcutLabel}
 			mockData={isCreating ? { ...mockData, workspaceStatus: null } : mockData}
+			diffStats={isCreating ? null : diffStats}
 			onClick={isCreating ? undefined : handleClick}
 			onDoubleClick={isCreating ? undefined : startRename}
 			onDeleteClick={() => setIsDeleteDialogOpen(true)}
@@ -156,7 +160,10 @@ export function DashboardSidebarWorkspaceItem({
 						hostType === "local-device" ? onHoverCardOpen : undefined
 					}
 					hoverCardContent={
-						<DashboardSidebarWorkspaceHoverCardContent workspace={workspace} />
+						<DashboardSidebarWorkspaceHoverCardContent
+							workspace={workspace}
+							diffStats={diffStats}
+						/>
 					}
 					onCreateSection={handleCreateSection}
 					onMoveToSection={(targetSectionId) =>

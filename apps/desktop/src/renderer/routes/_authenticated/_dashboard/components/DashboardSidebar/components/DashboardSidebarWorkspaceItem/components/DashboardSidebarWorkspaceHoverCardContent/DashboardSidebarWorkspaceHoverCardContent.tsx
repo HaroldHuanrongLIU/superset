@@ -4,6 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import { FaGithub } from "react-icons/fa";
 import { LuExternalLink, LuGlobe, LuTriangleAlert } from "react-icons/lu";
 import { useHotkeyDisplay } from "renderer/hotkeys";
+import type { DiffStats } from "../../../../hooks/useDashboardDiffStats";
 import type { DashboardSidebarWorkspace } from "../../../../types";
 import { ChecksList } from "./components/ChecksList";
 import { ChecksSummary } from "./components/ChecksSummary";
@@ -12,10 +13,12 @@ import { ReviewStatus } from "./components/ReviewStatus";
 
 interface DashboardSidebarWorkspaceHoverCardContentProps {
 	workspace: DashboardSidebarWorkspace;
+	diffStats: DiffStats | null;
 }
 
 export function DashboardSidebarWorkspaceHoverCardContent({
 	workspace,
+	diffStats,
 }: DashboardSidebarWorkspaceHoverCardContentProps) {
 	const {
 		name,
@@ -104,13 +107,11 @@ export function DashboardSidebarWorkspaceHoverCardContent({
 								/>
 							)}
 						</div>
-						{workspace.diffStats && (
+						{diffStats && (
 							<div className="flex items-center gap-1.5 text-xs font-mono shrink-0">
-								<span className="text-emerald-500">
-									+{workspace.diffStats.additions}
-								</span>
+								<span className="text-emerald-500">+{diffStats.additions}</span>
 								<span className="text-destructive-foreground">
-									-{workspace.diffStats.deletions}
+									-{diffStats.deletions}
 								</span>
 							</div>
 						)}

@@ -34,7 +34,6 @@ export interface DashboardSidebarWorkspace {
 	previewUrl: string | null;
 	needsRebase: boolean | null;
 	behindCount: number | null;
-	diffStats: { additions: number; deletions: number } | null;
 	createdAt: Date;
 	updatedAt: Date;
 	creationStatus?: "preparing" | "generating-branch" | "creating";

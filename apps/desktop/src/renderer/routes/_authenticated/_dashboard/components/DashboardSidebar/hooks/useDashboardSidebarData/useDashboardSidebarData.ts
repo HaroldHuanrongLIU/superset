@@ -5,7 +5,6 @@ import { useCallback, useMemo } from "react";
 import { env } from "renderer/env.renderer";
 import { authClient } from "renderer/lib/auth-client";
 import { electronTrpc } from "renderer/lib/electron-trpc";
-import { getRemoteHostUrl } from "renderer/lib/v2-workspace-host";
 import { useDashboardSidebarState } from "renderer/routes/_authenticated/hooks/useDashboardSidebarState";
 import { useCollections } from "renderer/routes/_authenticated/providers/CollectionsProvider";
 import { useHostService } from "renderer/routes/_authenticated/providers/HostServiceProvider";
@@ -17,10 +16,6 @@ import type {
 	DashboardSidebarSection,
 	DashboardSidebarWorkspace,
 } from "../../types";
-import {
-	useDashboardDiffStats,
-	type WorkspaceHostInfo,
-} from "../useDashboardDiffStats";
 
 // Pending workspaces are always rendered at the end of the project's workspace list
 const PENDING_WORKSPACE_TAB_ORDER = Number.MAX_SAFE_INTEGER;
@@ -126,41 +121,18 @@ export function useDashboardSidebarData() {
 		[collections],
 	);
 
-	const localHostUrl = activeHostService?.url ?? null;
-	const myMachineId = deviceInfo?.deviceId ?? null;
-
 	const localWorkspaceIds = useMemo(
 		() =>
 			sidebarWorkspaces
 				.filter(
 					(workspace) =>
 						workspace.hostMachineId != null &&
-						workspace.hostMachineId === myMachineId,
+						workspace.hostMachineId === deviceInfo?.deviceId,
 				)
 				.map((workspace) => workspace.id)
 				.sort(),
-		[myMachineId, sidebarWorkspaces],
+		[deviceInfo?.deviceId, sidebarWorkspaces],
 	);
-
-	const workspaceHosts = useMemo<WorkspaceHostInfo[]>(() => {
-		const results: WorkspaceHostInfo[] = [];
-		for (const workspace of sidebarWorkspaces) {
-			if (workspace.hostMachineId == null) continue; // cloud — no git
-			if (workspace.hostMachineId === myMachineId) {
-				if (localHostUrl) {
-					results.push({ workspaceId: workspace.id, hostUrl: localHostUrl });
-				}
-			} else {
-				results.push({
-					workspaceId: workspace.id,
-					hostUrl: getRemoteHostUrl(workspace.hostId),
-				});
-			}
-		}
-		return results;
-	}, [localHostUrl, myMachineId, sidebarWorkspaces]);
-
-	const diffStatsByWorkspaceId = useDashboardDiffStats(workspaceHosts);
 
 	const { data: pullRequestData, refetch: refetchPullRequests } = useQuery({
 		queryKey: [
@@ -271,10 +243,6 @@ export function useDashboardSidebarData() {
 						: null,
 				branchExistsOnRemote:
 					project.githubOwner !== null && project.githubRepoName !== null,
-				diffStats:
-					hostType === "local-device"
-						? (diffStatsByWorkspaceId.get(workspace.id) ?? null)
-						: null,
 				previewUrl: null,
 				needsRebase: null,
 				behindCount: null,
@@ -325,7 +293,6 @@ export function useDashboardSidebarData() {
 							? `https://github.com/${project.githubOwner}/${project.githubRepoName}`
 							: null,
 					branchExistsOnRemote: false,
-					diffStats: null,
 					previewUrl: null,
 					needsRebase: null,
 					behindCount: null,
@@ -359,7 +326,6 @@ export function useDashboardSidebarData() {
 		});
 	}, [
 		deviceInfo?.deviceId,
-		diffStatsByWorkspaceId,
 		localPullRequestsByWorkspaceId,
 		pendingWorkspace,
 		sidebarProjects,

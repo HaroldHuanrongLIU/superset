@@ -16,7 +16,10 @@ import type {
 	DashboardSidebarSection,
 	DashboardSidebarWorkspace,
 } from "../../types";
-import { useDashboardDiffStats } from "../useDashboardDiffStats";
+import {
+	useDashboardDiffStats,
+	type WorkspaceHostInfo,
+} from "../useDashboardDiffStats";
 
 // Pending workspaces are always rendered at the end of the project's workspace list
 const PENDING_WORKSPACE_TAB_ORDER = Number.MAX_SAFE_INTEGER;
@@ -100,20 +103,18 @@ export function useDashboardSidebarData() {
 					({ sidebarWorkspaces, workspaces }) =>
 						eq(sidebarWorkspaces.workspaceId, workspaces.id),
 				)
-				.leftJoin(
-					{ devices: collections.v2Devices },
-					({ workspaces, devices }) => eq(workspaces.deviceId, devices.id),
+				.leftJoin({ hosts: collections.v2Hosts }, ({ workspaces, hosts }) =>
+					eq(workspaces.hostId, hosts.id),
 				)
 				.orderBy(
 					({ sidebarWorkspaces }) => sidebarWorkspaces.sidebarState.tabOrder,
 					"asc",
 				)
-				.select(({ sidebarWorkspaces, workspaces, devices }) => ({
+				.select(({ sidebarWorkspaces, workspaces, hosts }) => ({
 					id: workspaces.id,
 					projectId: sidebarWorkspaces.sidebarState.projectId,
-					deviceId: workspaces.deviceId,
-					deviceType: devices?.type ?? null,
-					deviceClientId: devices?.clientId ?? null,
+					hostId: workspaces.hostId,
+					hostMachineId: hosts?.machineId ?? null,
 					name: workspaces.name,
 					branch: workspaces.branch,
 					createdAt: workspaces.createdAt,
@@ -129,19 +130,21 @@ export function useDashboardSidebarData() {
 			sidebarWorkspaces
 				.filter(
 					(workspace) =>
-						workspace.deviceType !== "cloud" &&
-						workspace.deviceClientId === deviceInfo?.deviceId,
+						workspace.hostMachineId != null &&
+						workspace.hostMachineId === deviceInfo?.deviceId,
 				)
 				.map((workspace) => workspace.id)
 				.sort(),
 		[deviceInfo?.deviceId, sidebarWorkspaces],
 	);
 
-	const diffStatsByWorkspaceId = useDashboardDiffStats(
-		localWorkspaceIds,
-		activeHostService?.url ?? null,
-		activeHostService?.client ?? null,
-	);
+	const workspaceHosts = useMemo<WorkspaceHostInfo[]>(() => {
+		const hostUrl = activeHostService?.url;
+		if (!hostUrl) return [];
+		return localWorkspaceIds.map((id) => ({ workspaceId: id, hostUrl }));
+	}, [activeHostService?.url, localWorkspaceIds]);
+
+	const diffStatsByWorkspaceId = useDashboardDiffStats(workspaceHosts);
 
 	const { data: pullRequestData, refetch: refetchPullRequests } = useQuery({
 		queryKey: [
@@ -228,16 +231,16 @@ export function useDashboardSidebarData() {
 			if (!project) continue;
 
 			const hostType: DashboardSidebarWorkspace["hostType"] =
-				workspace.deviceType === "cloud"
+				workspace.hostMachineId == null
 					? "cloud"
-					: workspace.deviceClientId === deviceInfo?.deviceId
+					: workspace.hostMachineId === deviceInfo?.deviceId
 						? "local-device"
 						: "remote-device";
 
 			const sidebarWorkspace: DashboardSidebarWorkspace = {
 				id: workspace.id,
 				projectId: workspace.projectId,
-				deviceId: workspace.deviceId,
+				hostId: workspace.hostId,
 				hostType,
 				accentColor: null,
 				name: workspace.name,
@@ -295,7 +298,7 @@ export function useDashboardSidebarData() {
 				const pendingItem: DashboardSidebarWorkspace = {
 					id: pendingWorkspace.id,
 					projectId: pendingWorkspace.projectId,
-					deviceId: deviceInfo.deviceId,
+					hostId: "",
 					hostType: "local-device",
 					accentColor: null,
 					name: pendingWorkspace.name,

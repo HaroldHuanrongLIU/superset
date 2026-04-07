@@ -1,1 +1,5 @@
-export { type DiffStats, useDashboardDiffStats } from "./useDashboardDiffStats";
+export {
+	type DiffStats,
+	useDashboardDiffStats,
+	type WorkspaceHostInfo,
+} from "./useDashboardDiffStats";

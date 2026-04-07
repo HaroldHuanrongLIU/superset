@@ -12,7 +12,6 @@ import { HotkeyLabel } from "renderer/hotkeys";
 import { RenameInput } from "renderer/screens/main/components/WorkspaceSidebar/RenameInput";
 import type { DiffStats } from "../../../../hooks/useDashboardDiffStats";
 import type { DashboardSidebarWorkspace } from "../../../../types";
-import type { WorkspaceRowMockData } from "../../utils";
 import { getCreationStatusText } from "../../utils/getCreationStatusText";
 import { DashboardSidebarWorkspaceDiffStats } from "../DashboardSidebarWorkspaceDiffStats";
 import { DashboardSidebarWorkspaceIcon } from "../DashboardSidebarWorkspaceIcon";
@@ -25,7 +24,6 @@ interface DashboardSidebarExpandedWorkspaceRowProps
 	isRenaming: boolean;
 	renameValue: string;
 	shortcutLabel?: string;
-	mockData: WorkspaceRowMockData;
 	diffStats: DiffStats | null;
 	onClick?: () => void;
 	onDoubleClick?: () => void;
@@ -46,7 +44,6 @@ export const DashboardSidebarExpandedWorkspaceRow = forwardRef<
 			isRenaming,
 			renameValue,
 			shortcutLabel,
-			mockData,
 			diffStats,
 			onClick,
 			onDoubleClick,
@@ -127,7 +124,7 @@ export const DashboardSidebarExpandedWorkspaceRow = forwardRef<
 								hostType={hostType}
 								isActive={isActive}
 								variant="expanded"
-								workspaceStatus={mockData.workspaceStatus}
+								workspaceStatus={null}
 								creationStatus={creationStatus}
 							/>
 						</div>

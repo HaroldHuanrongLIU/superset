@@ -6,7 +6,6 @@ import { DashboardSidebarExpandedWorkspaceRow } from "./components/DashboardSide
 import { DashboardSidebarWorkspaceContextMenu } from "./components/DashboardSidebarWorkspaceContextMenu/DashboardSidebarWorkspaceContextMenu";
 import { DashboardSidebarWorkspaceHoverCardContent } from "./components/DashboardSidebarWorkspaceHoverCardContent";
 import { useDashboardSidebarWorkspaceItemActions } from "./hooks/useDashboardSidebarWorkspaceItemActions";
-import { getWorkspaceRowMocks } from "./utils";
 
 interface DashboardSidebarWorkspaceItemProps {
 	workspace: DashboardSidebarWorkspace;
@@ -32,7 +31,6 @@ export function DashboardSidebarWorkspaceItem({
 		branch,
 		creationStatus,
 	} = workspace;
-	const mockData = getWorkspaceRowMocks(id);
 	const diffStats = useDiffStats(id);
 	const {
 		cancelRename,
@@ -75,7 +73,6 @@ export function DashboardSidebarWorkspaceItem({
 					hostType={hostType}
 					isActive={isActive}
 					onClick={isCreating ? undefined : handleClick}
-					workspaceStatus={isCreating ? null : mockData.workspaceStatus}
 					creationStatus={creationStatus}
 					disabled={isCreating}
 					aria-label={
@@ -137,7 +134,6 @@ export function DashboardSidebarWorkspaceItem({
 			isRenaming={isRenaming}
 			renameValue={renameValue}
 			shortcutLabel={shortcutLabel}
-			mockData={isCreating ? { ...mockData, workspaceStatus: null } : mockData}
 			diffStats={isCreating ? null : diffStats}
 			onClick={isCreating ? undefined : handleClick}
 			onDoubleClick={isCreating ? undefined : startRename}
